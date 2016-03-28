@@ -195,19 +195,19 @@ public class WorldFillTask implements Runnable
 			}
 
 			// load the target chunk and generate it if necessary
-			world.loadChunk(x, z, true);
+			generateChunkExceptWrapper(world, x, z, true);
 			worldData.chunkExistsNow(x, z);
 
 			// There need to be enough nearby chunks loaded to make the server populate a chunk with trees, snow, etc.
 			// So, we keep the last few chunks loaded, and need to also temporarily load an extra inside chunk (neighbor closest to center of map)
 			int popX = !isZLeg ? x : (x + (isNeg ? -1 : 1));
 			int popZ = isZLeg ? z : (z + (!isNeg ? -1 : 1));
-			world.loadChunk(popX, popZ, false);
+			generateChunkExceptWrapper(world, popX, popZ, false);
 
 			// make sure the previous chunk in our spiral is loaded as well (might have already existed and been skipped over)
 			if (!storedChunks.contains(lastChunk) && !originalChunks.contains(lastChunk))
 			{
-				world.loadChunk(lastChunk.x, lastChunk.z, false);
+				generateChunkExceptWrapper(world, lastChunk.x, lastChunk.z, false);
 				storedChunks.add(new CoordXZ(lastChunk.x, lastChunk.z));
 			}
 
@@ -462,5 +462,19 @@ public class WorldFillTask implements Runnable
 	public boolean refForceLoad()
 	{
 		return forceLoad;
+	}
+	
+	private void generateChunkExceptWrapper(World world, int chunkX, int chunkZ, boolean generate)
+	{
+		try
+		{
+			world.loadChunk(chunkX, chunkZ, generate);
+		}
+		catch(Exception ex)
+		{
+			Config.log("[Fill-HH] Encountered an unexpected exception loading chunk at WORLD " + world.getName() + " CHUNKX " + chunkX + " Z " + chunkZ );
+			Config.log( ex.toString() );
+			ex.printStackTrace();
+		}
 	}
 }
